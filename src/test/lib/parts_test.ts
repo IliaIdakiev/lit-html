@@ -13,7 +13,7 @@
  */
 
 import {__testOnlyClearSanitizerFactoryDoNotCallOrElse, setSanitizerFactory} from '../../lib/parts.js';
-import {AttributeCommitter, AttributePart, createMarker, DefaultTemplateProcessor, EventPart, html, NodePart, render, templateFactory, TemplateResult} from '../../lit-html.js';
+import {AttributeCommitter, AttributePart, createMarker, DefaultTemplateProcessor, directive, EventPart, html, NodePart, Part, render, templateFactory, TemplateResult} from '../../lit-html.js';
 import {stripExpressionMarkers} from '../test-utils/strip-markers.js';
 
 const assert = chai.assert;
@@ -517,6 +517,46 @@ suite('Parts', () => {
         part.clear();
         assert.deepEqual(
             Array.from(container.childNodes), [startNode, endNode]);
+      });
+
+      test('clears nodes into a detached fragment', () => {
+        const text = document.createTextNode('foo');
+        container.insertBefore(text, endNode);
+        part.clear();
+        assert.notEqual(text.parentNode, null);
+        assert.equal(text.parentNode!.nodeType, Node.DOCUMENT_FRAGMENT_NODE);
+      });
+    });
+
+    suite('directive holds NodePart', () => {
+      test('does not throw errors when part is detached', () => {
+        let part: Part;
+        const fooDirective = directive(() => (p: Part) => {
+          part = p;
+        });
+
+        const t = (bool: boolean) =>
+            html`<div>${bool ? html`${fooDirective()}` : 'detached'}</div>`;
+
+        // First render with unresolved Promise
+        render(t(true), container);
+        assert.equal(
+            stripExpressionMarkers(container.innerHTML), '<div></div>');
+
+        // Simulate an async part settting.
+        part!.setValue('foo');
+        part!.commit();
+
+        // Now detach the part's wrapping TemplateResult
+        render(t(false), container);
+        assert.equal(
+            stripExpressionMarkers(container.innerHTML), '<div>detached</div>');
+
+        // Simulate an async part settting.
+        part!.setValue('bar');
+        part!.commit();
+        assert.equal(
+            stripExpressionMarkers(container.innerHTML), '<div>detached</div>');
       });
     });
   });
