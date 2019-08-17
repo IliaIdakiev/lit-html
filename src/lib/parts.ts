@@ -17,7 +17,7 @@
  */
 
 import {isDirective} from './directive.js';
-import {reparentNodes} from './dom.js';
+import {removeNodes} from './dom.js';
 import {noChange, nothing, Part} from './part.js';
 import {RenderOptions} from './render-options.js';
 import {TemplateInstance} from './template-instance.js';
@@ -319,6 +319,9 @@ export class NodePart implements Part {
   }
 
   commit() {
+    if (!this.startNode.parentNode) {
+      return;
+    }
     while (isDirective(this.__pendingValue)) {
       const directive = this.__pendingValue;
       this.__pendingValue = noChange;
@@ -475,9 +478,8 @@ export class NodePart implements Part {
   }
 
   clear(startNode: Node = this.startNode) {
-    // Ensure that any nested NodeParts are not detached without a parentNode.
-    const frag = document.createDocumentFragment();
-    reparentNodes(frag, startNode.nextSibling!, this.endNode);
+    removeNodes(
+        this.startNode.parentNode!, startNode.nextSibling!, this.endNode);
   }
 }
 
