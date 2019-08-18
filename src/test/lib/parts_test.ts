@@ -518,14 +518,6 @@ suite('Parts', () => {
         assert.deepEqual(
             Array.from(container.childNodes), [startNode, endNode]);
       });
-
-      test('clears nodes into a detached fragment', () => {
-        const text = document.createTextNode('foo');
-        container.insertBefore(text, endNode);
-        part.clear();
-        assert.notEqual(text.parentNode, null);
-        assert.equal(text.parentNode!.nodeType, Node.DOCUMENT_FRAGMENT_NODE);
-      });
     });
 
     suite('directive holds NodePart', () => {
